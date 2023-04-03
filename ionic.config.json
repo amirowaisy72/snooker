@@ -1,0 +1,7 @@
+{
+    "name": "Snooker",
+    "integrations": {
+      "capacitor": {}
+    },
+    "type": "react"
+}
