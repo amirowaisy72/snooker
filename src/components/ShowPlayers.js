@@ -187,7 +187,7 @@ const ShowPlayers = ({
       {/* Voice recognition/speak */}
       <div>
         <p>Microphone: {listening ? "on" : "off"}</p>
-        <button hidden={true}
+        <button hidden={false}
           onClick={SpeechRecognition.startListening({
             continuous: true,
             language: "en-PK",
@@ -195,10 +195,10 @@ const ShowPlayers = ({
         >
           Start
         </button>
-        {/* <button onClick={SpeechRecognition.stopListening}>Stop</button>
+        <button onClick={SpeechRecognition.stopListening}>Stop</button>
         <button onClick={resetTranscript}>Reset</button>
         <button onClick={() => speak({ text: "text" })}>Speak</button>
-        <p>{transcript}</p> */}
+        <p>{transcript}</p>
       </div>
       {/* List of Players (remove duplicates) */}
 
