@@ -1,5 +1,10 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
+//Voice recognition and speak
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
+import { useSpeechSynthesis } from "react-speech-kit";
 
 const ShowPlayers = ({
   players,
@@ -9,23 +14,117 @@ const ShowPlayers = ({
   deleteHandle,
   redPoints,
 }) => {
+  // Generate unique names array
+  const uniquePlayers = Array.from(new Set(players.map((a) => a.name))).map(
+    (name) => {
+      return players.find((a) => a.name === name);
+    }
+  );
+  //Voice commands
+  const commands = [
+    {
+      command: "select *",
+      callback: (name) => {
+        let found = false;
+        for (let index = 0; index < uniquePlayers.length; index++) {
+          const element = uniquePlayers[index];
+          if (element.name === name) {
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          setActivePlayer(name);
+          speak({ text: `${name} Selected` });
+        } else {
+          speak({ text: `${name} not found` });
+        }
+      },
+    },
+    {
+      command: "ball *",
+      callback: (color) => {
+        if (activePlayer === "") {
+          speak({ text: "Please select a player" });
+        } else {
+          if (color === "Red" || color === "red") {
+            addScore(redPoints, "red");
+            speak({ text: `"Red added" ${redPoints} Points` });
+          } else if (color === "Yellow" || color === "yellow") {
+            addScore(2, "#F2EC32");
+            speak({ text: "Yellow added" });
+          } else if (color === "Green" || color === "green") {
+            addScore(3, "#48E51E");
+            speak({ text: "Green added" });
+          } else if (color === "Brown" || color === "brown") {
+            addScore(4, "#EEA526");
+            speak({ text: "Brown added" });
+          } else if (color === "Blue" || color === "blue") {
+            addScore(5, "blue");
+            speak({ text: "Blue added" });
+          } else if (color === "Pink" || color === "pink") {
+            addScore(6, "pink");
+            speak({ text: "Pink added" });
+          } else if (color === "Black" || color === "black") {
+            addScore(7, "");
+            speak({ text: "Black added" });
+          } else {
+            speak({ text: "No ball for this color" });
+          }
+        }
+      },
+    },
+    {
+      command: "cross *",
+      callback: (color) => {
+        if (activePlayer === "") {
+          speak({ text: "Please select a player" });
+        } else {
+          if(color === "Red" || color === "red"){
+            fowlHandle(activePlayer, 10);
+            speak({ text: "Red Foul" });
+          }
+          else if (color === "Brown" || color === "brown") {
+            fowlHandle(activePlayer, 4);
+            speak({ text: "Brown Foul" });
+          } else if (color === "Blue" || color === "blue") {
+            fowlHandle(activePlayer, 5);
+            speak({ text: "Blue Foul" });
+          } else if (color === "Pink" || color === "pink") {
+            fowlHandle(activePlayer, 6);
+            speak({ text: "Pink Foul" });
+          } else if (color === "Black" || color === "black") {
+            fowlHandle(activePlayer, 7);
+            speak({ text: "Black Foul" });
+          } else {
+            speak({ text: "No ball for this color" });
+          }
+        }
+      },
+    },
+  ];
+  //Voice recognition and speak
+  const { speak } = useSpeechSynthesis();
+  const { transcript, listening, resetTranscript } = useSpeechRecognition({
+    commands,
+  });
   //States
   const [activePlayer, setActivePlayer] = useState("");
   const [updateMode, setUpdateMode] = useState(false);
   const [updateId, setUpdateId] = useState(null);
   const [foulMode, setFoulMode] = useState(false);
   //Ball Hitted Details
-  const [hittColor, setHittColor] = useState('')
-  const [hittHide, setHittHide] = useState(true)
+  const [hittColor, setHittColor] = useState("");
+  const [hittHide, setHittHide] = useState(true);
 
   //run function came from AddPlayers to add scores data to players state variable
   const addScore = (score, color) => {
     //Ball Hitted state change
-    setHittHide(false)
-    setHittColor(color)
-    setTimeout(()=>{
-      setHittHide(true)
-    }, 2000)
+    setHittHide(false);
+    setHittColor(color);
+    setTimeout(() => {
+      setHittHide(true);
+    }, 2000);
     if (updateMode) {
       //run update function and setUpdateMode false after updating completed
       update(updateId, score);
@@ -73,13 +172,6 @@ const ShowPlayers = ({
     return totalPoints;
   };
 
-  // Generate unique names array
-  const uniquePlayers = Array.from(new Set(players.map((a) => a.name))).map(
-    (name) => {
-      return players.find((a) => a.name === name);
-    }
-  );
-
   // Set Update Mode On
   const updateOn = (id) => {
     setFoulMode(false);
@@ -92,6 +184,22 @@ const ShowPlayers = ({
 
   return (
     <div className="container text-center my-2">
+      {/* Voice recognition/speak */}
+      <div>
+        <p>Microphone: {listening ? "on" : "off"}</p>
+        <button hidden={true}
+          onClick={SpeechRecognition.startListening({
+            continuous: true,
+            language: "en-PK",
+          })}
+        >
+          Start
+        </button>
+        {/* <button onClick={SpeechRecognition.stopListening}>Stop</button>
+        <button onClick={resetTranscript}>Reset</button>
+        <button onClick={() => speak({ text: "text" })}>Speak</button>
+        <p>{transcript}</p> */}
+      </div>
       {/* List of Players (remove duplicates) */}
 
       <ul className="nav nav-tabs my-2">
@@ -320,7 +428,10 @@ const ShowPlayers = ({
       </center>
       {/* Balls being hitted by active player */}
       <center hidden={hittHide} className="mb-1">
-        <i className="fa-solid fa-globe" style={{ color: hittColor, fontSize: '50px' }}></i>
+        <i
+          className="fa-solid fa-globe"
+          style={{ color: hittColor, fontSize: "50px" }}
+        ></i>
       </center>
       <center>
         <div className="card" style={{ width: "18rem" }}>
