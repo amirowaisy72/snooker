@@ -20,6 +20,7 @@ const ShowPlayers = ({
       return players.find((a) => a.name === name);
     }
   );
+
   //Voice commands
   const commands = [
     {
@@ -28,8 +29,10 @@ const ShowPlayers = ({
         let found = false;
         for (let index = 0; index < uniquePlayers.length; index++) {
           const element = uniquePlayers[index];
-          if (element.name === name) {
+          let pattern = new RegExp(name, "i");
+          if (element.name.match(pattern)) {
             found = true;
+            name = element.name;
             break;
           }
         }
@@ -80,11 +83,10 @@ const ShowPlayers = ({
         if (activePlayer === "") {
           speak({ text: "Please select a player" });
         } else {
-          if(color === "Red" || color === "red"){
+          if (color === "Red" || color === "red") {
             fowlHandle(activePlayer, 10);
             speak({ text: "Red Foul" });
-          }
-          else if (color === "Brown" || color === "brown") {
+          } else if (color === "Brown" || color === "brown") {
             fowlHandle(activePlayer, 4);
             speak({ text: "Brown Foul" });
           } else if (color === "Blue" || color === "blue") {
@@ -99,6 +101,18 @@ const ShowPlayers = ({
           } else {
             speak({ text: "No ball for this color" });
           }
+        }
+      },
+    },
+    {
+      command: "points",
+      callback: () => {
+        //Read all players
+        for (let index = 0; index < uniquePlayers.length; index++) {
+          const element = uniquePlayers[index];
+          speak({
+            text: element.name + " " + getPoints(element.name) + " Points",
+          });
         }
       },
     },
@@ -187,17 +201,13 @@ const ShowPlayers = ({
       {/* Voice recognition/speak */}
       <div>
         <p>Microphone: {listening ? "on" : "off"}</p>
-        <button hidden={false}
-          onClick={SpeechRecognition.startListening({
-            continuous: true,
-            language: "en-PK",
-          })}
-        >
+        <button hidden={false} onClick={SpeechRecognition.startListening}>
           Start
         </button>
         <button onClick={SpeechRecognition.stopListening}>Stop</button>
         <button onClick={resetTranscript}>Reset</button>
-        <button onClick={() => speak({ text: "text" })}>Speak</button>
+        <button onClick={() => speak({ text: "text" })}>Speak</button><br />
+        <small>[select, ball, cross, points]</small>
         <p>{transcript}</p>
       </div>
       {/* List of Players (remove duplicates) */}
@@ -206,26 +216,50 @@ const ShowPlayers = ({
         {uniquePlayers.map((p) => {
           key = key + 1;
           return (
-            <li
-              key={key}
-              onClick={() => {
-                playerSelected(p.name);
-              }}
-              className="nav-item"
-            >
-              <a
-                key={key}
-                className={`nav-link ${
-                  p.name === activePlayer ? "active" : ""
-                }`}
-                href="#"
-              >
-                {p.name}{" "}
-                <label key={key} style={{ color: "black" }}>
-                  {getPoints(p.name)}
-                </label>
-              </a>
-            </li>
+            <div key={key}>
+              {getPoints(p.name) < 100 ? (
+                <li
+                  key={key}
+                  onClick={() => {
+                    playerSelected(p.name);
+                  }}
+                  className="nav-item"
+                >
+                  <a
+                    className={`nav-link ${
+                      p.name === activePlayer ? "active" : ""
+                    }`}
+                    href="#"
+                  >
+                    {p.name}{" "}
+                    <label style={{ color: "black" }}>
+                      {getPoints(p.name)}
+                    </label>
+                  </a>
+                </li>
+              ) : (
+                <li
+                  key={key}
+                  onClick={() => {
+                    playerSelected(p.name);
+                  }}
+                  className="nav-item"
+                >
+                  <a
+                    style={{ background: "green", color: "white" }}
+                    className={`nav-link ${
+                      p.name === activePlayer ? "active" : ""
+                    }`}
+                    href="#"
+                  >
+                    {p.name}{" "}
+                    <label style={{ color: "white" }}>
+                      {getPoints(p.name)}
+                    </label>
+                  </a>
+                </li>
+              )}
+            </div>
           );
         })}
       </ul>
